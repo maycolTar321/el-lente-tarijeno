@@ -21,7 +21,7 @@ export async function generateMetadata({
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ) {
-    return { title: "Noticia" };
+    return { title: "Noticia · EL LENTE TARIJEÑO" };
   }
 
   try {
@@ -33,10 +33,10 @@ export async function generateMetadata({
       .eq("status", "published")
       .maybeSingle();
 
-    if (!a) return { title: "Noticia no encontrada" };
+    if (!a) return { title: "Noticia no encontrada · EL LENTE TARIJEÑO" };
 
     return {
-      title: a.title,
+      title: `${a.title} · EL LENTE TARIJEÑO`,
       description: a.summary,
       openGraph: {
         title: a.title,
@@ -70,33 +70,99 @@ export default async function Story({ params }: StoryProps) {
     notFound();
   }
 
+  // Cargar artículos relacionados
+  let related: Article[] = [];
+  try {
+    const { data: relData } = await sb
+      .from("articles")
+      .select("*")
+      .eq("status", "published")
+      .eq("category", a.category)
+      .neq("id", a.id)
+      .limit(3);
+    related = (relData as Article[]) || [];
+  } catch {
+    related = [];
+  }
+
   return (
     <>
       <Header />
-      <main>
-        <article className="article">
-          <Link className="small" href="/">
-            ← Volver a portada
-          </Link>
-          <p>
-            <span className="pill">{a.category}</span>
-          </p>
-          <h1>{a.title}</h1>
-          <p className="summary">{a.summary}</p>
-          <p className="small">
-            Por <strong>{a.author}</strong> ·{" "}
-            {dateFmt(a.published_at || a.created_at)}
-          </p>
-          {a.cover_image && (
-            <img className="cover" src={a.cover_image} alt={a.title} />
+      <main id="top" style={{ padding: "40px 0 70px" }}>
+        <div className="wrap">
+          <article className="story-container">
+            <Link className="story-back-link" href="/">
+              ← Volver a la portada principal
+            </Link>
+
+            <header className="story-header">
+              <span className="eyebrow" style={{ color: "var(--gold)" }}>
+                {a.category.toUpperCase()}
+              </span>
+              <h1>{a.title}</h1>
+              <p className="story-lead">{a.summary}</p>
+              <div className="story-byline-bar">
+                <span>
+                  Por <strong>{a.author}</strong> · Publicado el{" "}
+                  {dateFmt(a.published_at || a.created_at)}
+                </span>
+                <span className="eyebrow" style={{ color: "var(--red)", fontSize: "10px", margin: 0 }}>
+                  EL LENTE TARIJEÑO
+                </span>
+              </div>
+            </header>
+
+            {a.cover_image && (
+              <img
+                className="story-main-img"
+                src={a.cover_image}
+                alt={a.title}
+              />
+            )}
+
+            <div className="story-prose">{a.content}</div>
+
+            {/* Cita de cierre editorial */}
+            <div className="quote" style={{ margin: "40px 0 20px" }}>
+              “Donde otros ven una noticia, nosotros ponemos la lupa”.
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "20px", marginTop: "30px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+              <Link href="/" className="btn ghost" style={{ fontSize: "11px", padding: "10px 18px" }}>
+                ← Ver más noticias
+              </Link>
+              <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                EL LENTE TARIJEÑO · Tarija, Bolivia
+              </span>
+            </div>
+          </article>
+
+          {/* Artículos relacionados si existen */}
+          {related.length > 0 && (
+            <div style={{ maxWidth: "860px", margin: "40px auto 0" }}>
+              <div className="heading" style={{ marginBottom: "20px" }}>
+                <div className="eyebrow">CONTENIDO RELACIONADO</div>
+                <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "24px" }}>
+                  Más en {a.category}
+                </h3>
+              </div>
+
+              <div className="grid">
+                {related.map((rel, idx) => (
+                  <article className="card" key={rel.id} style={{ padding: "18px" }}>
+                    <div className="num">0{idx + 1}</div>
+                    <Link href={`/noticia/${rel.slug}`}>
+                      <h4 style={{ fontFamily: "var(--font-serif)", fontSize: "17px", margin: "6px 0", color: "var(--white)" }}>
+                        {rel.title}
+                      </h4>
+                    </Link>
+                    <p style={{ fontSize: "12.5px" }}>{rel.summary}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
           )}
-          <div className="bodycopy">{a.content}</div>
-          <hr />
-          <p className="small">
-            EL LENTE TARIJEÑO · Donde otros ven una noticia, nosotros ponemos la
-            lupa.
-          </p>
-        </article>
+        </div>
       </main>
       <Footer />
     </>

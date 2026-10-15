@@ -20,7 +20,7 @@ export interface Article {
   updated_at?: string;
 }
 
-const cats = [
+const categories = [
   "Tarija",
   "Política",
   "Gran Chaco",
@@ -160,7 +160,7 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
   }
 
   async function remove(a: Article) {
-    if (!confirm(`¿Eliminar “${a.title}”?`)) return;
+    if (!confirm(`¿Eliminar definitivamente “${a.title}”?`)) return;
     if (!sb) return;
 
     const { error } = await sb.from("articles").delete().eq("id", a.id);
@@ -170,7 +170,7 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
     }
     setItems(items.filter((x) => x.id !== a.id));
     if (edit?.id === a.id) clear();
-    setMessage("Noticia eliminada.");
+    setMessage("Noticia eliminada correctamente.");
   }
 
   async function logout() {
@@ -182,34 +182,44 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
+      {/* Tarjetas de métricas editoriales */}
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", margin: "18px 0 28px" }}>
         {[
-          ["Artículos", items.length],
-          ["Publicados", items.filter((a) => a.status === "published").length],
-          ["Borradores", items.filter((a) => a.status === "draft").length],
+          ["Total de Artículos", items.length],
+          ["Publicados en Portada", items.filter((a) => a.status === "published").length],
+          ["Borradores en Redacción", items.filter((a) => a.status === "draft").length],
         ].map((x) => (
-          <div className="admincard" key={x[0] as string} style={{ flex: "1 1 140px", margin: 0 }}>
-            <span className="small">{x[0]}</span>
-            <div className="serif" style={{ fontSize: 32 }}>
+          <div className="admin-panel-card" key={x[0] as string} style={{ flex: "1 1 150px", margin: 0, padding: 18 }}>
+            <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--gold-accent)", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "var(--font-heading)" }}>
+              {x[0]}
+            </span>
+            <div style={{ fontFamily: "var(--font-serif)", fontSize: "32px", fontWeight: 900, color: "var(--text-primary)", marginTop: 4 }}>
               {x[1]}
             </div>
           </div>
         ))}
-        <button className="btn dark" onClick={logout}>
-          Cerrar sesión
+        <button className="btn btn-secondary" onClick={logout} style={{ alignSelf: "center", marginLeft: "auto" }}>
+          Cerrar Sesión
         </button>
       </div>
 
-      <section className="admincard">
-        <h2 className="serif">{edit ? "Editar noticia" : "Nueva noticia"}</h2>
-        {message && <div className="notice">{message}</div>}
+      {/* Formulario de redacción */}
+      <section className="admin-panel-card">
+        <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "22px", fontWeight: 900, marginBottom: "18px", color: "var(--text-primary)" }}>
+          {edit ? "Editar Noticia" : "Redactar Nueva Noticia"}
+        </h2>
+
+        {message && <div className="admin-notification">{message}</div>}
+
         <form onSubmit={save}>
-          <div className="group">
-            <label>Titular *</label>
+          <div className="admin-field-group">
+            <label htmlFor="article-title">Titular Principal *</label>
             <input
-              className="field"
+              id="article-title"
+              className="admin-input"
               required
               maxLength={180}
+              placeholder="Ej: Gobernación de Tarija presenta informe financiero de la gestión"
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
@@ -218,67 +228,77 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
             />
           </div>
 
-          <div className="formrow">
-            <div className="group">
-              <label>Slug / URL *</label>
+          <div className="admin-form-row">
+            <div className="admin-field-group">
+              <label htmlFor="article-slug">URL / Slug *</label>
               <input
-                className="field"
+                id="article-slug"
+                className="admin-input"
                 required
                 value={slug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
               />
             </div>
-            <div className="group">
-              <label>Categoría</label>
+            <div className="admin-field-group">
+              <label htmlFor="article-cat">Categoría Editorial</label>
               <select
-                className="field"
+                id="article-cat"
+                className="admin-input"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                {cats.map((c) => (
-                  <option key={c}>{c}</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="group">
-            <label>Resumen *</label>
+          <div className="admin-field-group">
+            <label htmlFor="article-summary">Resumen / Bajada de Noticia * (máx. 400 caracteres)</label>
             <textarea
-              className="field"
+              id="article-summary"
+              className="admin-input"
               required
               maxLength={400}
+              rows={2}
+              style={{ minHeight: "75px" }}
+              placeholder="Escribe un sumario directo que sintetice los puntos clave de la noticia..."
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
             />
           </div>
 
-          <div className="group">
-            <label>Contenido completo *</label>
+          <div className="admin-field-group">
+            <label htmlFor="article-content">Cuerpo Completo de la Noticia *</label>
             <textarea
-              className="field"
+              id="article-content"
+              className="admin-input"
               required
               minLength={20}
+              rows={8}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Deja una línea en blanco entre párrafos."
+              placeholder="Desarrolla el cuerpo del artículo. Deja una línea en blanco entre párrafos."
             />
           </div>
 
-          <div className="formrow">
-            <div className="group">
-              <label>Autor</label>
+          <div className="admin-form-row">
+            <div className="admin-field-group">
+              <label htmlFor="article-author">Autor / Periodista</label>
               <input
-                className="field"
+                id="article-author"
+                className="admin-input"
                 required
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
               />
             </div>
-            <div className="group">
-              <label>Imagen de portada (máx. 8 MB)</label>
+            <div className="admin-field-group">
+              <label htmlFor="article-file">Fotografía de Portada (máx. 8 MB)</label>
               <input
-                className="field"
+                id="article-file"
+                className="admin-input"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -287,79 +307,89 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
           </div>
 
           {img && !file && (
-            <div className="group">
-              <label>Imagen actual</label>
-              <img
-                src={img}
-                alt=""
-                style={{ maxWidth: "320px", maxHeight: "180px", objectFit: "cover" }}
-              />
-              <button
-                type="button"
-                className="btn light"
-                onClick={() => setImg("")}
-                style={{ marginTop: 6 }}
-              >
-                Quitar imagen
-              </button>
+            <div className="admin-field-group">
+              <label>Fotografía Actual</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <img
+                  src={img}
+                  alt="Portada actual"
+                  style={{ width: "130px", height: "75px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border-subtle)" }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ fontSize: "11px", padding: "6px 12px" }}
+                  onClick={() => setImg("")}
+                >
+                  Quitar Imagen
+                </button>
+              </div>
             </div>
           )}
 
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={featured}
-              onChange={(e) => setFeatured(e.target.checked)}
-            />{" "}
-            Destacar en portada
-          </label>
+          <div style={{ margin: "12px 0 18px" }}>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "13px", cursor: "pointer", color: "var(--text-primary)" }}>
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+              />
+              <strong>Destacar como Noticia Principal en la Portada</strong>
+            </label>
+          </div>
 
-          <div className="formrow">
-            <div className="group">
-              <label>Estado</label>
+          <div className="admin-form-row">
+            <div className="admin-field-group">
+              <label htmlFor="article-status">Estado de Publicación</label>
               <select
-                className="field"
+                id="article-status"
+                className="admin-input"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "draft" | "published")}
               >
-                <option value="draft">Borrador</option>
-                <option value="published">Publicar ahora</option>
+                <option value="draft">Borrador (No visible al público)</option>
+                <option value="published">Publicado (Visible en el periódico)</option>
               </select>
             </div>
-            <div className="group">
-              <label>Vista previa URL</label>
-              <div className="field">/noticia/{slug || "titular"}</div>
+            <div className="admin-field-group">
+              <label>Ruta URL de la Noticia</label>
+              <div className="admin-input" style={{ backgroundColor: "#0c0e12", color: "var(--gold-accent)" }}>
+                /noticia/{slug || "titular-de-ejemplo"}
+              </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, marginTop: "12px" }}>
             <button className="btn" disabled={busy}>
               {busy
                 ? "Guardando…"
                 : edit
-                ? "Guardar cambios"
+                ? "Guardar Cambios"
                 : status === "published"
-                ? "Publicar noticia"
-                : "Guardar borrador"}
+                ? "Publicar Noticia Ahora"
+                : "Guardar como Borrador"}
             </button>
-            <button type="button" className="btn light" onClick={clear}>
-              Limpiar
+            <button type="button" className="btn btn-secondary" onClick={clear}>
+              Limpiar Campos
             </button>
           </div>
         </form>
       </section>
 
-      <section className="admincard">
-        <h2 className="serif">Noticias y borradores</h2>
-        <div className="tablewrap">
-          <table>
+      {/* Tabla de artículos registrados */}
+      <section className="admin-panel-card">
+        <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "20px", fontWeight: 900, marginBottom: "16px", color: "var(--text-primary)" }}>
+          Noticias Registradas en el Sistema
+        </h2>
+        <div className="table-overflow">
+          <table className="editorial-table">
             <thead>
               <tr>
                 <th>Titular</th>
                 <th>Estado</th>
-                <th>Categoría</th>
+                <th>Sección</th>
                 <th>Fecha</th>
-                <th>Acciones</th>
+                <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -367,24 +397,29 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
                 items.map((a) => (
                   <tr key={a.id}>
                     <td>
-                      <strong>{a.title}</strong>
-                      {a.featured && <div className="small">★ Destacada</div>}
+                      <strong style={{ color: "var(--text-primary)" }}>{a.title}</strong>
+                      {a.featured && (
+                        <span style={{ marginLeft: 8, fontSize: "10.5px", color: "var(--gold-accent)", fontWeight: 800 }}>
+                          ★ DESTACADA
+                        </span>
+                      )}
                     </td>
                     <td>
-                      <span className={`status ${a.status}`}>
+                      <span className={`status-tag ${a.status}`}>
                         {a.status === "published" ? "Publicado" : "Borrador"}
                       </span>
                     </td>
                     <td>{a.category}</td>
                     <td>{dateFmt(a.published_at || a.created_at)}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <button className="btn light" onClick={() => load(a)}>
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", gap: 8 }}>
+                        <button className="btn btn-secondary" style={{ padding: "5px 10px", fontSize: "11px" }} onClick={() => load(a)}>
                           Editar
                         </button>
                         {a.status === "published" && (
                           <a
-                            className="btn light"
+                            className="btn btn-secondary"
+                            style={{ padding: "5px 10px", fontSize: "11px" }}
                             target="_blank"
                             rel="noreferrer"
                             href={`/noticia/${a.slug}`}
@@ -392,8 +427,8 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
                             Ver
                           </a>
                         )}
-                        <button className="btn dark" onClick={() => remove(a)}>
-                          Eliminar
+                        <button className="btn" style={{ padding: "5px 10px", fontSize: "11px", background: "#8B0000" }} onClick={() => remove(a)}>
+                          Borrar
                         </button>
                       </div>
                     </td>
@@ -401,7 +436,9 @@ export default function Dashboard({ initial }: { initial: Article[] }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5}>Todavía no hay noticias. Crea la primera arriba.</td>
+                  <td colSpan={5} style={{ textAlign: "center", padding: "28px", color: "var(--text-muted)" }}>
+                    No hay noticias creadas todavía. Utiliza el formulario superior para redactar tu primera noticia.
+                  </td>
                 </tr>
               )}
             </tbody>
